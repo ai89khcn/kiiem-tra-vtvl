@@ -88,7 +88,10 @@
   <h1>CÔNG CỤ KIỂM TRA & XÓA DÒNG THỪA TRỐNG BỘ BIỂU VTVL V2</h1>
   <div class="subtitle">
     <span>Xử lý 100% trực tiếp trên trình duyệt của người dùng (không lưu file lên máy chủ, không cần đăng nhập) theo chuẩn <b>Bo_bieu_VTVL_v2_mau.xlsx</b>.</span>
-    <a href="Bo_bieu_VTVL_v2_mau.xlsx" download class="btn btn-green" style="margin:0; padding:7px 14px;">⬇ Tải file mẫu chuẩn Bo_bieu_VTVL_v2_mau.xlsx</a>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="button" onclick="downloadTemplateXlsx()" class="btn btn-green" style="margin:0; padding:7px 14px;">⬇ Tải file mẫu chuẩn Bo_bieu_VTVL_v2_mau.xlsx</button>
+      <button type="button" onclick="downloadSelfHtml()" class="btn btn-orange" style="margin:0; padding:7px 14px;">💻 Tải Công cụ (.html) về máy chạy Offline</button>
+    </div>
   </div>
 
   <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
@@ -107,13 +110,13 @@
       <div>
         <b style="color:var(--primary); font-size:15px;">Bước 2 (Lưu kết quả về máy):</b>
         <div style="font-size:12.5px; color:#4b5563; margin-top:2px;">
-          Tải về file Excel (.xlsx) đã kèm sheet <b>"Danh sách lỗi"</b> hoặc file Excel đã tự động <b>cắt sạch toàn bộ dòng thừa trống</b>.
+          Tải về file Excel (.xlsx) đã tự động <b>cắt sạch toàn bộ dòng thừa trống</b>, file Excel kèm sheet <b>"Danh sách lỗi"</b>, hoặc <b>Báo cáo (.html)</b> mở xem ngay trên mọi trình duyệt.
         </div>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn" style="margin:0;" onclick="downloadReportXlsx()">⬇ Lưu File Báo cáo Kiểm tra (.xlsx)</button>
         <button class="btn btn-green" style="margin:0;" onclick="downloadCleanedXlsx()">✨ Lưu File Đã Xóa Dòng Thừa Trống (.xlsx)</button>
-        <button class="btn btn-orange" style="margin:0;" onclick="exportCSV()">⬇ Lưu Danh sách lỗi (.csv)</button>
+        <button class="btn" style="margin:0;" onclick="downloadReportXlsx()">⬇ Lưu File Báo cáo Kiểm tra (.xlsx)</button>
+        <button class="btn btn-orange" style="margin:0;" onclick="exportHTMLReport()">🌐 Lưu Báo cáo Kết quả (.html)</button>
       </div>
     </div>
 
@@ -893,18 +896,75 @@ async function downloadReportXlsx() {
   await buildZipAndDownload(newRaw, `Ket_qua_kiem_tra_${currentFileName}`);
 }
 
-function exportCSV() {
-  const rows = [["STT", "Loại", "Biểu", "Ô", "Giá trị", "Mã", "Mô tả", "Hướng xử lý"]];
-  if (lastIssues.length === 0) {
-    rows.push(["1", "ĐẠT", "TOÀN BỘ 12 SHEET", "-", "ĐẠT CHUẨN 100%", "OK-000", "Không có lỗi", "Hợp lệ"]);
-  } else {
-    lastIssues.forEach((it, idx) => rows.push([idx + 1, it.type, it.sheet, it.cellRef, it.val, it.code, it.desc, it.fix]));
-  }
-  const csvContent = "\uFEFF" + rows.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(",")).join("\r\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+function downloadTemplateXlsx() {
+  const binStr = atob(TPL_B64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+  const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `Danh_sach_loi_${currentFileName.replace(/\.xlsx$/i, "")}.csv`;
+  a.download = "Bo_bieu_VTVL_v2_mau.xlsx";
+  a.click();
+}
+
+function downloadSelfHtml() {
+  const clone = document.documentElement.cloneNode(true);
+  const ra = clone.querySelector("#resultArea");
+  if (ra) ra.style.display = "none";
+  const sc = clone.querySelector("#summaryCards");
+  if (sc) sc.innerHTML = "";
+  const tb1 = clone.querySelector("#sheetTable tbody");
+  if (tb1) tb1.innerHTML = "";
+  const tb2 = clone.querySelector("#errorTable tbody");
+  if (tb2) tb2.innerHTML = "";
+  const fullHtml = "<!DOCTYPE html>\n" + clone.outerHTML;
+  const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Cong_Cu_Kiem_Tra_VTVL_V2_Offline.html";
+  a.click();
+}
+
+function exportHTMLReport() {
+  const cardsHtml = document.getElementById("summaryCards").innerHTML;
+  const sheetTableHtml = document.getElementById("sheetTable").outerHTML;
+  const errorTableHtml = document.getElementById("errorTable").outerHTML;
+  const nowStr = new Date().toLocaleString("vi-VN");
+  const styleText = document.querySelector("style").innerHTML;
+
+  const reportDoc = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo Kiểm tra VTVL V2 - ${escapeXml(currentFileName)}</title>
+<style>
+${styleText}
+@media print { .no-print { display: none !important; } body { padding: 0; background: #fff; } .container { box-shadow: none; padding: 10px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:2px solid var(--primary); padding-bottom:14px; margin-bottom:20px;">
+    <div>
+      <h1 style="margin:0;">BÁO CÁO KẾT QUẢ KIỂM TRA BỘ BIỂU VTVL V2</h1>
+      <div style="color:#4b5563; font-size:13.5px; margin-top:4px;">Tệp kiểm tra: <b>${escapeXml(currentFileName)}</b> | Thời gian xuất: <b>${nowStr}</b></div>
+    </div>
+    <button class="btn no-print" style="margin:0;" onclick="window.print()">🖨 In báo cáo / Lưu PDF</button>
+  </div>
+  <div class="cards">${cardsHtml}</div>
+  <div class="section-title"><span>1. Kiểm tra Cấu trúc 12 Sheet & Dòng thừa trống theo Bo_bieu_VTVL_v2_mau.xlsx</span></div>
+  ${sheetTableHtml}
+  <div class="section-title"><span>2. Chi tiết Danh sách Lỗi & Cảnh báo</span></div>
+  ${errorTableHtml}
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([reportDoc], { type: "text/html;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Bao_cao_kiem_tra_${currentFileName.replace(/\.xlsx$/i, "")}.html`;
   a.click();
 }
 
