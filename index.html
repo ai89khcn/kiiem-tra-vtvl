@@ -88,10 +88,7 @@
   <h1>CÔNG CỤ KIỂM TRA & XÓA DÒNG THỪA TRỐNG BỘ BIỂU VTVL V2</h1>
   <div class="subtitle">
     <span>Xử lý 100% trực tiếp trên trình duyệt của người dùng (không lưu file lên máy chủ, không cần đăng nhập) theo chuẩn <b>Bo_bieu_VTVL_v2_mau.xlsx</b>.</span>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button type="button" onclick="downloadTemplateXlsx()" class="btn btn-green" style="margin:0; padding:7px 14px;">⬇ Tải file mẫu chuẩn Bo_bieu_VTVL_v2_mau.xlsx</button>
-      <button type="button" onclick="downloadSelfHtml()" class="btn btn-orange" style="margin:0; padding:7px 14px;">💻 Tải Công cụ (.html) về máy chạy Offline</button>
-    </div>
+    <button type="button" onclick="downloadTemplateXlsx()" class="btn btn-green" style="margin:0; padding:7px 14px;">⬇ Tải file mẫu chuẩn Bo_bieu_VTVL_v2_mau.xlsx</button>
   </div>
 
   <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
@@ -904,24 +901,6 @@ function downloadTemplateXlsx() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "Bo_bieu_VTVL_v2_mau.xlsx";
-  a.click();
-}
-
-function downloadSelfHtml() {
-  const clone = document.documentElement.cloneNode(true);
-  const ra = clone.querySelector("#resultArea");
-  if (ra) ra.style.display = "none";
-  const sc = clone.querySelector("#summaryCards");
-  if (sc) sc.innerHTML = "";
-  const tb1 = clone.querySelector("#sheetTable tbody");
-  if (tb1) tb1.innerHTML = "";
-  const tb2 = clone.querySelector("#errorTable tbody");
-  if (tb2) tb2.innerHTML = "";
-  const fullHtml = "<!DOCTYPE html>\n" + clone.outerHTML;
-  const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8;" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "Cong_Cu_Kiem_Tra_VTVL_V2_Offline.html";
   a.click();
 }
 
